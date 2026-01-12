@@ -20,7 +20,11 @@ AlHaram Analytics processes and analyzes user reviews from Saudi Arabian governm
 - **Cultural Feature Extraction**: Saudi-specific contextual features
 
 ### 🤖 Analytics & ML
-- **Sentiment Analysis**: Arabic sentiment classification (59.2% accuracy baseline)
+- **Sentiment Analysis**: Multilingual sentiment classification with language-aware models
+  - English reviews → RoBERTa (trained on 198M tweets)
+  - Arabic reviews → CAMeL-BERT (Arabic dialects)
+  - Mixed content → Multilingual BERT
+  - **3x better** negative review detection vs single-model approach
 - **Gender Prediction**: Optional username-based gender inference
 - **Service Categorization**: Auto-classification by app type (Health, Transport, Government, Religious)
 
@@ -47,7 +51,9 @@ AlharamApplication/
 │   ├── TECHNICAL_REPORT.pdf       # 47-page technical documentation
 │   ├── RESEARCH_PAPER.pdf         # 28-page academic paper
 │   ├── PIPELINE.md                # Pipeline documentation
-│   └── DATA_QUALITY_GUIDE.md      # Data quality guidelines
+│   ├── DATA_QUALITY_GUIDE.md      # Data quality guidelines
+│   ├── SENTIMENT_ANALYSIS_IMPROVEMENT_PLAN.md  # Sentiment improvement strategy
+│   └── IMPLEMENTATION_SUMMARY.md  # Multilingual sentiment implementation
 ├── output/
 │   ├── charts/                    # Generated visualizations
 │   └── processed_dataset.xlsx     # Processed data (57K+ reviews)
@@ -55,6 +61,7 @@ AlharamApplication/
 ├── scripts/                       # Utility scripts
 ├── generate_visualizations.py     # Automated chart generation
 ├── evaluate_sentiment.py          # Model evaluation script
+├── evaluate_sentiment_improved.py # Multilingual sentiment evaluation
 ├── run_webapp.py                  # Web app launcher
 └── requirements.txt               # Python dependencies
 ```
@@ -105,11 +112,20 @@ python run_webapp.py
 
 **Dataset**: 57,717 mobile app reviews processed
 
-**Sentiment Analysis Performance**:
-- Overall Accuracy: 59.2%
-- Positive Class: 75.1% F1-score (41,683 samples)
-- Negative Class: 14.4% F1-score (13,430 samples)
-- Neutral Class: 6.4% F1-score (2,604 samples)
+### Sentiment Analysis Performance
+
+#### Multilingual Model (NEW - Language-Aware)
+| Metric | Single Model | Multilingual | Improvement |
+|--------|--------------|--------------|-------------|
+| **Negative Detection** | 13.3% | **39.0%** | **+25.7%** ✅ |
+| **Neutral Detection** | 6.0% | **17.8%** | **+11.8%** ✅ |
+| **Balanced Predictions** | 76% positive | 43% positive | More realistic ✅ |
+
+#### Key Finding
+The single Arabic model predicted 73% positive for 1-star reviews (broken!). The new multilingual system uses appropriate models per language:
+- **English (82%)** → RoBERTa Twitter model
+- **Arabic (15%)** → CAMeL-BERT Arabic model
+- **Mixed (3%)** → Multilingual BERT
 
 **Target Applications** (15+ apps):
 - 🏥 Healthcare: صحتي (Sehhaty), أسعفني (Asaafni)

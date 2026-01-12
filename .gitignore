@@ -66,6 +66,7 @@ models/
 
 # Large output files
 output/processed_dataset.xlsx
+output/processed_dataset_with_improved_sentiment.xlsx
 dataset.xlsx
 
 # Node modules for taxonomy diagram
