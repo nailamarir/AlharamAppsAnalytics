@@ -1,0 +1,83 @@
+\contentsline {section}{\numberline {1}Introduction}{4}{section.1}%
+\contentsline {subsection}{\numberline {1.1}Background}{4}{subsection.1.1}%
+\contentsline {subsection}{\numberline {1.2}Problem Statement}{4}{subsection.1.2}%
+\contentsline {subsection}{\numberline {1.3}Objectives}{4}{subsection.1.3}%
+\contentsline {subsection}{\numberline {1.4}Target Applications}{4}{subsection.1.4}%
+\contentsline {section}{\numberline {2}System Architecture}{4}{section.2}%
+\contentsline {subsection}{\numberline {2.1}High-Level Architecture}{4}{subsection.2.1}%
+\contentsline {subsection}{\numberline {2.2}Directory Structure}{6}{subsection.2.2}%
+\contentsline {subsection}{\numberline {2.3}Design Principles}{6}{subsection.2.3}%
+\contentsline {section}{\numberline {3}Technology Stack}{6}{section.3}%
+\contentsline {subsection}{\numberline {3.1}Core Technologies}{6}{subsection.3.1}%
+\contentsline {subsection}{\numberline {3.2}Frontend Technologies}{6}{subsection.3.2}%
+\contentsline {subsection}{\numberline {3.3}Development Tools}{7}{subsection.3.3}%
+\contentsline {section}{\numberline {4}Core Components}{7}{section.4}%
+\contentsline {subsection}{\numberline {4.1}Username Cleaner}{7}{subsection.4.1}%
+\contentsline {subsubsection}{\numberline {4.1.1}Arabizi Conversion Map}{7}{subsubsection.4.1.1}%
+\contentsline {subsubsection}{\numberline {4.1.2}Processing Steps}{8}{subsubsection.4.1.2}%
+\contentsline {subsubsection}{\numberline {4.1.3}Usage Example}{8}{subsubsection.4.1.3}%
+\contentsline {subsection}{\numberline {4.2}Text Cleaner}{8}{subsection.4.2}%
+\contentsline {subsubsection}{\numberline {4.2.1}Design Philosophy}{8}{subsubsection.4.2.1}%
+\contentsline {subsubsection}{\numberline {4.2.2}Extraction Features}{8}{subsubsection.4.2.2}%
+\contentsline {subsubsection}{\numberline {4.2.3}Arabic Normalization}{9}{subsubsection.4.2.3}%
+\contentsline {subsubsection}{\numberline {4.2.4}Additional Processing}{9}{subsubsection.4.2.4}%
+\contentsline {subsubsection}{\numberline {4.2.5}Usage Example}{9}{subsubsection.4.2.5}%
+\contentsline {subsection}{\numberline {4.3}Language Detector}{9}{subsection.4.3}%
+\contentsline {subsubsection}{\numberline {4.3.1}Detection Algorithm}{9}{subsubsection.4.3.1}%
+\contentsline {subsubsection}{\numberline {4.3.2}Output Categories}{10}{subsubsection.4.3.2}%
+\contentsline {subsection}{\numberline {4.4}Period Tagger}{10}{subsection.4.4}%
+\contentsline {subsubsection}{\numberline {4.4.1}Islamic Period Definitions}{10}{subsubsection.4.4.1}%
+\contentsline {subsubsection}{\numberline {4.4.2}Implementation}{10}{subsubsection.4.4.2}%
+\contentsline {subsection}{\numberline {4.5}Service Classifier}{11}{subsection.4.5}%
+\contentsline {subsection}{\numberline {4.6}Text Feature Extractor}{11}{subsection.4.6}%
+\contentsline {subsubsection}{\numberline {4.6.1}Feature Categories}{11}{subsubsection.4.6.1}%
+\contentsline {subsubsection}{\numberline {4.6.2}Usage Example}{11}{subsubsection.4.6.2}%
+\contentsline {subsection}{\numberline {4.7}Sentiment Analyzer}{12}{subsection.4.7}%
+\contentsline {subsubsection}{\numberline {4.7.1}Model Options}{12}{subsubsection.4.7.1}%
+\contentsline {subsubsection}{\numberline {4.7.2}Output Schema}{12}{subsubsection.4.7.2}%
+\contentsline {subsubsection}{\numberline {4.7.3}Architecture}{12}{subsubsection.4.7.3}%
+\contentsline {subsubsection}{\numberline {4.7.4}Lexicon-Based Fallback}{13}{subsubsection.4.7.4}%
+\contentsline {subsubsection}{\numberline {4.7.5}Usage Example}{13}{subsubsection.4.7.5}%
+\contentsline {subsubsection}{\numberline {4.7.6}Performance Considerations}{13}{subsubsection.4.7.6}%
+\contentsline {subsection}{\numberline {4.8}Gender Prediction (Optional)}{13}{subsection.4.8}%
+\contentsline {subsubsection}{\numberline {4.8.1}Models Used}{13}{subsubsection.4.8.1}%
+\contentsline {subsubsection}{\numberline {4.8.2}Ensemble Decision Logic}{14}{subsubsection.4.8.2}%
+\contentsline {subsubsection}{\numberline {4.8.3}Output Columns}{14}{subsubsection.4.8.3}%
+\contentsline {section}{\numberline {5}Data Processing Pipeline}{14}{section.5}%
+\contentsline {subsection}{\numberline {5.1}Pipeline Overview}{14}{subsection.5.1}%
+\contentsline {subsection}{\numberline {5.2}Pipeline Steps}{15}{subsection.5.2}%
+\contentsline {subsection}{\numberline {5.3}Pipeline Execution Flow}{15}{subsection.5.3}%
+\contentsline {section}{\numberline {6}Web Application}{15}{section.6}%
+\contentsline {subsection}{\numberline {6.1}Overview}{15}{subsection.6.1}%
+\contentsline {subsection}{\numberline {6.2}User Interface Components}{15}{subsection.6.2}%
+\contentsline {subsubsection}{\numberline {6.2.1}File Upload Section}{15}{subsubsection.6.2.1}%
+\contentsline {subsubsection}{\numberline {6.2.2}Pipeline Visualization}{15}{subsubsection.6.2.2}%
+\contentsline {subsubsection}{\numberline {6.2.3}Action Buttons}{17}{subsubsection.6.2.3}%
+\contentsline {subsection}{\numberline {6.3}Session Management}{17}{subsection.6.3}%
+\contentsline {section}{\numberline {7}API Reference}{17}{section.7}%
+\contentsline {subsection}{\numberline {7.1}REST Endpoints}{17}{subsection.7.1}%
+\contentsline {subsection}{\numberline {7.2}Response Formats}{17}{subsection.7.2}%
+\contentsline {subsubsection}{\numberline {7.2.1}Upload Response}{17}{subsubsection.7.2.1}%
+\contentsline {subsubsection}{\numberline {7.2.2}Preview Response}{18}{subsubsection.7.2.2}%
+\contentsline {subsection}{\numberline {7.3}CLI Interface}{18}{subsection.7.3}%
+\contentsline {section}{\numberline {8}Data Schema}{18}{section.8}%
+\contentsline {subsection}{\numberline {8.1}Input Requirements}{18}{subsection.8.1}%
+\contentsline {subsection}{\numberline {8.2}Output Schema}{18}{subsection.8.2}%
+\contentsline {section}{\numberline {9}Installation and Deployment}{18}{section.9}%
+\contentsline {subsection}{\numberline {9.1}Requirements}{18}{subsection.9.1}%
+\contentsline {subsection}{\numberline {9.2}Installation Steps}{20}{subsection.9.2}%
+\contentsline {subsection}{\numberline {9.3}Running the Application}{20}{subsection.9.3}%
+\contentsline {subsubsection}{\numberline {9.3.1}Web Interface}{20}{subsubsection.9.3.1}%
+\contentsline {subsubsection}{\numberline {9.3.2}Command Line}{20}{subsubsection.9.3.2}%
+\contentsline {subsubsection}{\numberline {9.3.3}Python API}{20}{subsubsection.9.3.3}%
+\contentsline {subsection}{\numberline {9.4}Configuration}{20}{subsection.9.4}%
+\contentsline {section}{\numberline {10}Performance Considerations}{21}{section.10}%
+\contentsline {subsection}{\numberline {10.1}Processing Times}{21}{subsection.10.1}%
+\contentsline {subsection}{\numberline {10.2}Memory Usage}{21}{subsection.10.2}%
+\contentsline {subsection}{\numberline {10.3}Optimization Recommendations}{21}{subsection.10.3}%
+\contentsline {section}{\numberline {11}Future Enhancements}{22}{section.11}%
+\contentsline {subsection}{\numberline {11.1}Implemented Features (v0.2.0)}{22}{subsection.11.1}%
+\contentsline {subsection}{\numberline {11.2}Planned Features}{22}{subsection.11.2}%
+\contentsline {subsection}{\numberline {11.3}Technical Improvements}{22}{subsection.11.3}%
+\contentsline {section}{\numberline {A}Arabizi Character Mapping}{22}{appendix.A}%
+\contentsline {section}{\numberline {B}Islamic Calendar Reference}{23}{appendix.B}%

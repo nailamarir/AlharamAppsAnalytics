@@ -1,0 +1,55 @@
+# AlHaram Analytics Pipeline Configuration
+
+# Data paths
+data:
+  raw_dir: "data/raw"
+  processed_dir: "data/processed"
+  default_input: "dataset.xlsx"
+  default_output: "dataset_processed.xlsx"
+
+# Preprocessing settings
+preprocessing:
+  username:
+    min_letters: 3
+    column_name: "User Name"
+    output_column: "clean_name"
+
+  language:
+    column_name: "Review Text"
+    output_column: "language"
+
+# Feature engineering settings
+feature_engineering:
+  device:
+    platform_column: "Platform"
+    output_column: "Device Type"
+
+  period:
+    date_column: "Review Date"
+    output_column: "period"
+    include_quarter: true
+    quarter_column: "App_Version_Period"
+
+  service:
+    app_column: "Application Name"
+    output_column: "Service_Type"
+
+# Gender prediction settings
+gender_prediction:
+  enabled: false  # Set to true to enable
+  models:
+    - name: "genderize"
+      model_id: "imranali291/genderize"
+      label_map:
+        LABEL_0: "Female"
+        LABEL_1: "Male"
+    - name: "gender_classification"
+      model_id: "padmajabfrl/Gender-Classification"
+      label_map: {}
+  confidence_threshold: 0.60
+  high_confidence_threshold: 0.80
+
+# Logging
+logging:
+  verbose: true
+  log_file: null  # Set path to enable file logging

@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AlHaram Analytics | Preprocessing Pipeline</title>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <div class="logo-icon">
+                    <i class="fas fa-mosque"></i>
+                </div>
+                <div class="logo-text">
+                    <h1>AlHaram Analytics</h1>
+                    <span>Preprocessing Pipeline</span>
+                </div>
+            </div>
+            <nav class="nav-links">
+                <a href="#pipelineSection" class="nav-link active">
+                    <i class="fas fa-stream"></i> Pipeline
+                </a>
+                <a href="#dataSection" class="nav-link" id="dataNavLink">
+                    <i class="fas fa-table"></i> Data
+                </a>
+                <a href="#docsSection" class="nav-link">
+                    <i class="fas fa-book"></i> Docs
+                </a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <div class="hero-badge">
+                <i class="fas fa-sparkles"></i>
+                <span>Data Processing Made Easy</span>
+            </div>
+            <h2>Transform Your App Reviews<br>Into Actionable Insights</h2>
+            <p>Interactive preprocessing pipeline for AlHaram mobile applications data. Clean, enrich, and analyze reviews from Hajj, Umrah, and government service apps.</p>
+
+            <div class="hero-stats">
+                <div class="stat-item">
+                    <i class="fas fa-layer-group"></i>
+                    <div class="stat-info">
+                        <span class="stat-value">6</span>
+                        <span class="stat-label">Pipeline Steps</span>
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <i class="fas fa-language"></i>
+                    <div class="stat-info">
+                        <span class="stat-value">AR/EN</span>
+                        <span class="stat-label">Languages</span>
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <i class="fas fa-calendar-check"></i>
+                    <div class="stat-info">
+                        <span class="stat-value">Hijri</span>
+                        <span class="stat-label">Calendar</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="hero-visual">
+            <div class="floating-card card-1">
+                <i class="fas fa-user-edit"></i>
+                <span>Username</span>
+            </div>
+            <div class="floating-card card-2">
+                <i class="fas fa-language"></i>
+                <span>Language</span>
+            </div>
+            <div class="floating-card card-3">
+                <i class="fas fa-calendar-alt"></i>
+                <span>Period</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Upload Section -->
+    <section class="upload-section" id="upload">
+        <div class="upload-container">
+            <div class="upload-box" id="uploadBox">
+                <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" hidden>
+                <div class="upload-icon">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                </div>
+                <h3>Upload Your Dataset</h3>
+                <p>Drag & drop your Excel or CSV file here, or click to browse</p>
+                <span class="upload-formats">Supported: .xlsx, .xls, .csv (max 50MB)</span>
+                <button class="btn btn-primary" type="button">
+                    <i class="fas fa-folder-open"></i> Choose File
+                </button>
+            </div>
+
+            <!-- File Info (shown after upload) -->
+            <div class="file-info hidden" id="fileInfo">
+                <div class="file-icon">
+                    <i class="fas fa-file-excel"></i>
+                </div>
+                <div class="file-details">
+                    <h4 id="fileName">dataset.xlsx</h4>
+                    <p id="fileStats">57,717 rows • 22 columns</p>
+                </div>
+                <button class="btn btn-outline" id="changeFileBtn">
+                    <i class="fas fa-sync-alt"></i> Change
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pipeline Section -->
+    <section class="pipeline-section hidden" id="pipelineSection">
+        <div class="section-header">
+            <h2><i class="fas fa-stream"></i> Preprocessing Pipeline</h2>
+            <p>Click on each step to preview, then apply transformations to your data</p>
+
+            <div class="pipeline-actions">
+                <button class="btn btn-success" id="applyAllBtn">
+                    <i class="fas fa-play"></i> Apply All Steps
+                </button>
+                <button class="btn btn-outline" id="resetBtn">
+                    <i class="fas fa-undo"></i> Reset
+                </button>
+            </div>
+        </div>
+
+        <!-- Pipeline Steps -->
+        <div class="pipeline-grid">
+            {% for step in steps %}
+            <div class="pipeline-card" data-step="{{ step.id }}" style="--step-color: {{ step.color }}">
+                <div class="card-header">
+                    <div class="step-icon" style="background: {{ step.color }}20; color: {{ step.color }}">
+                        <i class="fas {{ step.icon }}"></i>
+                    </div>
+                    <div class="step-status">
+                        <span class="status-badge pending">Pending</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <h3>{{ step.name }}</h3>
+                    <p>{{ step.description }}</p>
+                    <ul class="step-details">
+                        {% for detail in step.details[:3] %}
+                        <li><i class="fas fa-check-circle"></i> {{ detail }}</li>
+                        {% endfor %}
+                    </ul>
+                    <div class="column-info">
+                        <span class="col-badge input">
+                            <i class="fas fa-sign-in-alt"></i> {{ step.input_col }}
+                        </span>
+                        <i class="fas fa-arrow-right"></i>
+                        <span class="col-badge output">
+                            <i class="fas fa-sign-out-alt"></i> {{ step.output_col }}
+                        </span>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button class="btn btn-sm btn-outline preview-btn">
+                        <i class="fas fa-eye"></i> Preview
+                    </button>
+                    <button class="btn btn-sm btn-primary apply-btn">
+                        <i class="fas fa-check"></i> Apply
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <!-- Preview Modal -->
+    <div class="modal-overlay hidden" id="previewModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="modalTitle">
+                    <i class="fas fa-eye"></i> Preview: Username Cleaning
+                </h3>
+                <button class="modal-close" id="modalClose">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- Stats Comparison -->
+                <div class="stats-comparison">
+                    <div class="stats-card before">
+                        <h4><i class="fas fa-arrow-left"></i> Before</h4>
+                        <div class="stats-grid" id="beforeStats">
+                            <!-- Filled by JS -->
+                        </div>
+                    </div>
+                    <div class="stats-card after">
+                        <h4><i class="fas fa-arrow-right"></i> After</h4>
+                        <div class="stats-grid" id="afterStats">
+                            <!-- Filled by JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sample Comparison Table -->
+                <div class="comparison-table-wrapper">
+                    <h4><i class="fas fa-table"></i> Sample Transformations</h4>
+                    <table class="comparison-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th id="beforeColHeader">Before</th>
+                                <th id="afterColHeader">After</th>
+                                <th>Changed</th>
+                            </tr>
+                        </thead>
+                        <tbody id="comparisonBody">
+                            <!-- Filled by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" id="modalCancelBtn">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button class="btn btn-success" id="modalApplyBtn">
+                    <i class="fas fa-check"></i> Apply This Step
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Data Preview Section -->
+    <section class="data-section hidden" id="dataSection">
+        <div class="section-header">
+            <h2><i class="fas fa-table"></i> Data Preview</h2>
+            <div class="data-actions">
+                <button class="btn btn-success" id="downloadBtn">
+                    <i class="fas fa-download"></i> Download Processed Data
+                </button>
+            </div>
+        </div>
+
+        <div class="data-stats" id="dataStats">
+            <div class="stat-box">
+                <i class="fas fa-database"></i>
+                <div>
+                    <span class="stat-num" id="totalRows">0</span>
+                    <span class="stat-label">Total Rows</span>
+                </div>
+            </div>
+            <div class="stat-box">
+                <i class="fas fa-columns"></i>
+                <div>
+                    <span class="stat-num" id="totalCols">0</span>
+                    <span class="stat-label">Columns</span>
+                </div>
+            </div>
+            <div class="stat-box">
+                <i class="fas fa-plus-circle"></i>
+                <div>
+                    <span class="stat-num" id="newCols">0</span>
+                    <span class="stat-label">New Columns</span>
+                </div>
+            </div>
+            <div class="stat-box">
+                <i class="fas fa-check-double"></i>
+                <div>
+                    <span class="stat-num" id="appliedSteps">0/6</span>
+                    <span class="stat-label">Steps Applied</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-wrapper">
+            <table class="data-table" id="dataTable">
+                <thead id="dataTableHead">
+                    <!-- Filled by JS -->
+                </thead>
+                <tbody id="dataTableBody">
+                    <!-- Filled by JS -->
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- Documentation Section -->
+    <section class="docs-section" id="docsSection">
+        <div class="section-header">
+            <h2><i class="fas fa-book"></i> Pipeline Documentation</h2>
+            <p>Learn how each preprocessing step transforms your data</p>
+        </div>
+
+        <div class="docs-grid">
+            <div class="doc-card">
+                <div class="doc-icon" style="background: #6366f120; color: #6366f1;">
+                    <i class="fas fa-user-edit"></i>
+                </div>
+                <h3>Username Cleaning</h3>
+                <p>Cleans and normalizes usernames from app reviews.</p>
+                <ul>
+                    <li><strong>Arabizi Conversion:</strong> Mo7amed → Mohamed, 3li → Ali</li>
+                    <li><strong>Trailing Numbers:</strong> Hasan855 → Hasan</li>
+                    <li><strong>Symbol Removal:</strong> Removes emojis, punctuation</li>
+                    <li><strong>Anonymous Handling:</strong> Empty/invalid names → "Anonymous"</li>
+                </ul>
+            </div>
+
+            <div class="doc-card">
+                <div class="doc-icon" style="background: #8b5cf620; color: #8b5cf6;">
+                    <i class="fas fa-language"></i>
+                </div>
+                <h3>Language Detection</h3>
+                <p>Identifies the language of each review text.</p>
+                <ul>
+                    <li><strong>Arabic:</strong> Reviews in Arabic script</li>
+                    <li><strong>English:</strong> Reviews in Latin script</li>
+                    <li><strong>Mixed:</strong> Reviews with both scripts</li>
+                    <li><strong>Unknown:</strong> Cannot determine language</li>
+                </ul>
+            </div>
+
+            <div class="doc-card">
+                <div class="doc-icon" style="background: #06b6d420; color: #06b6d4;">
+                    <i class="fas fa-mobile-alt"></i>
+                </div>
+                <h3>Device Type Mapping</h3>
+                <p>Maps platform to device type for analysis.</p>
+                <ul>
+                    <li><strong>iOS:</strong> App Store reviews</li>
+                    <li><strong>Android:</strong> Google Play reviews</li>
+                    <li><strong>Other:</strong> Unknown platforms</li>
+                </ul>
+            </div>
+
+            <div class="doc-card">
+                <div class="doc-icon" style="background: #10b98120; color: #10b981;">
+                    <i class="fas fa-mobile-screen"></i>
+                </div>
+                <h3>App Name Normalization</h3>
+                <p>Standardizes application names to merge duplicates.</p>
+                <ul>
+                    <li><strong>Arabic Variations:</strong> توكلنا → tawakkalna</li>
+                    <li><strong>Spelling Fixes:</strong> حافلات مكه → حافلات مكة</li>
+                    <li><strong>Merged Names:</strong> نسك → Nusuk نسك</li>
+                </ul>
+            </div>
+
+            <div class="doc-card">
+                <div class="doc-icon" style="background: #f59e0b20; color: #f59e0b;">
+                    <i class="fas fa-tags"></i>
+                </div>
+                <h3>Service Classification</h3>
+                <p>Categorizes apps by service type.</p>
+                <ul>
+                    <li><strong>Health:</strong> صحتي, أسعفني</li>
+                    <li><strong>Reservation:</strong> حافلات مكة, قطار الحرمين</li>
+                    <li><strong>Government:</strong> توكلنا, نسك</li>
+                    <li><strong>Religious:</strong> مكتشف القبله, مصحف الحرمين</li>
+                </ul>
+            </div>
+
+            <div class="doc-card">
+                <div class="doc-icon" style="background: #ef444420; color: #ef4444;">
+                    <i class="fas fa-calendar-alt"></i>
+                </div>
+                <h3>Period Tagging</h3>
+                <p>Tags reviews with Islamic calendar events and holidays.</p>
+                <ul>
+                    <li><strong>Hajj Season:</strong> 1-15 Dhul Hijjah</li>
+                    <li><strong>Ramadan:</strong> Month 9 in Hijri calendar</li>
+                    <li><strong>Eid al-Fitr:</strong> 1-3 Shawwal</li>
+                    <li><strong>Eid al-Adha:</strong> 10-13 Dhul Hijjah</li>
+                    <li><strong>School Summer:</strong> KSA Ministry dates</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-brand">
+                <i class="fas fa-mosque"></i>
+                <span>AlHaram Analytics</span>
+            </div>
+            <p>Built for analyzing Hajj, Umrah, and government service app reviews</p>
+            <div class="footer-links">
+                <a href="#"><i class="fab fa-github"></i></a>
+                <a href="#"><i class="fas fa-book"></i></a>
+                <a href="#"><i class="fas fa-envelope"></i></a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay hidden" id="loadingOverlay">
+        <div class="loading-spinner">
+            <div class="spinner"></div>
+            <p id="loadingText">Processing...</p>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Scripts -->
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

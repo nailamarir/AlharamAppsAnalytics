@@ -1,0 +1,31 @@
+SENTIMENT ANALYSIS EVALUATION METRICS
+==================================================
+
+Total samples evaluated: 57,717
+
+Overall Accuracy: 0.5920 (59.20%)
+
+Macro-averaged:
+  Precision: 0.3187
+  Recall: 0.3220
+  F1-Score: 0.3198
+
+Weighted-averaged:
+  Precision: 0.5675
+  Recall: 0.5920
+  F1-Score: 0.5790
+
+Per-class:
+  negative: P=0.1579, R=0.1327, F1=0.1442
+  neutral: P=0.0676, R=0.0603, F1=0.0637
+  positive: P=0.7307, R=0.7732, F1=0.7513
+
+              precision    recall  f1-score   support
+
+    negative     0.1579    0.1327    0.1442     13430
+     neutral     0.0676    0.0603    0.0637      2604
+    positive     0.7307    0.7732    0.7513     41683
+
+    accuracy                         0.5920     57717
+   macro avg     0.3187    0.3220    0.3198     57717
+weighted avg     0.5675    0.5920    0.5790     57717

@@ -1,0 +1,1457 @@
+\documentclass[11pt,a4paper]{article}
+
+% Basic Packages (available in TeX Live basic)
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{fancyhdr}
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+% Page geometry
+\geometry{
+    left=2.5cm,
+    right=2.5cm,
+    top=2.5cm,
+    bottom=2.5cm
+}
+
+% Colors
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+\definecolor{linkblue}{rgb}{0.0,0.4,0.7}
+
+% Hyperref settings
+\hypersetup{
+    colorlinks=true,
+    linkcolor=linkblue,
+    filecolor=magenta,
+    urlcolor=linkblue,
+    citecolor=linkblue,
+    pdftitle={AlHaram Analytics Technical Report},
+    pdfauthor={Naila Marir}
+}
+
+% Code listing style
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,
+    breaklines=true,
+    captionpos=b,
+    keepspaces=true,
+    numbers=left,
+    numbersep=5pt,
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
+    tabsize=2,
+    frame=single,
+    framerule=0.5pt
+}
+\lstset{style=mystyle}
+
+% Header and footer
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\leftmark}
+\fancyhead[R]{AlHaram Analytics}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.4pt}
+
+% Custom commands
+\newcommand{\code}[1]{\texttt{#1}}
+
+% Document info
+\title{
+    \vspace{-2cm}
+    \Large\textbf{Technical Report}\\[0.5cm]
+    \Huge\textbf{AlHaram Analytics}\\[0.3cm]
+    \Large Preprocessing Pipeline for Saudi Arabian\\Mobile Application Reviews\\[1cm]
+    \large Version 0.2.0
+}
+\author{
+    \textbf{Naila Marir}\\
+    Computer Science Department\\
+    Effat University, Jeddah, Saudi Arabia\\
+    \texttt{nmarir@effatuniversity.edu.sa}
+}
+\date{January 2026}
+
+\begin{document}
+
+\maketitle
+\thispagestyle{empty}
+
+\vfill
+\begin{abstract}
+\noindent AlHaram Analytics is a specialized data preprocessing and analytics system designed to process, clean, and enrich mobile application review data from Saudi Arabian government and religious service applications. The system addresses unique challenges in Arabic text processing, including Arabizi conversion, Islamic calendar event tagging, and multi-language support. The pipeline processes reviews from applications related to Hajj, Umrah, healthcare, transportation, and government services, providing structured data suitable for sentiment analysis and user experience research. This technical report provides comprehensive documentation of the system architecture, components, APIs, and deployment guidelines.
+\end{abstract}
+\vfill
+
+\newpage
+\tableofcontents
+\newpage
+
+%===============================================================================
+\section{Introduction}
+\label{sec:introduction}
+%===============================================================================
+
+\subsection{Background}
+
+The Kingdom of Saudi Arabia has developed numerous mobile applications to support pilgrims, residents, and visitors. These applications span healthcare (Sehhaty, Asaafni), transportation (Makkah Buses, Haramain Train), government services (Tawakkalna, Nusuk), and religious guidance (Quran apps, Qibla finders). User reviews from these applications provide valuable insights into user experience, service quality, and areas for improvement.
+
+\subsection{Problem Statement}
+
+Processing Arabic app reviews presents unique challenges:
+
+\begin{itemize}
+    \item \textbf{Arabizi usage}: Users frequently write Arabic words using Latin characters and numerals (e.g., ``7abibi'' for ``habibi'')
+    \item \textbf{Multi-language content}: Reviews contain Arabic, English, or mixed-language text
+    \item \textbf{Islamic calendar relevance}: User behavior varies significantly during Hajj, Ramadan, and Eid periods
+    \item \textbf{Username diversity}: Usernames contain Arabic, Latin, emojis, and special characters
+\end{itemize}
+
+\subsection{Objectives}
+
+\begin{enumerate}
+    \item Standardize and clean user-generated content
+    \item Detect and classify review languages
+    \item Tag reviews with relevant Islamic calendar periods
+    \item Classify applications by service type
+    \item Predict user gender from usernames (optional)
+    \item Provide interactive visualization and processing interface
+\end{enumerate}
+
+\subsection{Target Applications}
+
+\begin{table}[htbp]
+\centering
+\caption{Target Applications by Category}
+\label{tab:target_apps}
+\begin{tabular}{ll}
+\hline
+\textbf{Category} & \textbf{Applications} \\
+\hline
+Health Services & Sehhaty, Asaafni \\
+Transportation & Makkah Buses, HHR Train, Tanqul \\
+Government & Tawakkalna, Nusuk, Irshad \\
+Religious & Qibla Finder, Haramain Quran \\
+\hline
+\end{tabular}
+\end{table}
+
+%===============================================================================
+\section{System Architecture}
+\label{sec:architecture}
+%===============================================================================
+
+\subsection{High-Level Architecture}
+
+The AlHaram Analytics system follows a modular architecture with three primary interfaces: Web UI, Command-Line Interface (CLI), and Python API. All interfaces utilize a shared preprocessing pipeline that orchestrates multiple transformation components.
+
+\begin{figure}[htbp]
+\centering
+\begin{verbatim}
++------------------------------------------------------------------+
+|                    AlHaram Analytics System                       |
++------------------------------------------------------------------+
+|                                                                   |
+|  +----------------+  +----------------+  +----------------+       |
+|  | Web Interface  |  | CLI Interface  |  |  Python API    |       |
+|  |    (Flask)     |  |   (argparse)   |  |   (Module)     |       |
+|  +-------+--------+  +-------+--------+  +-------+--------+       |
+|          |                   |                   |                |
+|          +-------------------+-------------------+                |
+|                              |                                    |
+|                   +----------v----------+                         |
+|                   | PreprocessingPipeline|                        |
+|                   +----------+----------+                         |
+|                              |                                    |
+|  +---------------------------+---------------------------+        |
+|  |                           |                           |        |
+|  v                           v                           v        |
+| +-------------+  +-------------------+  +------------------+      |
+| |Preprocessing|  |Feature Engineering|  |Gender Prediction |      |
+| +-------------+  +-------------------+  +------------------+      |
+| | - Username  |  | - App Normalizer  |  | - HF Classifier  |      |
+| | - Language  |  | - Device Mapper   |  | - Ensemble       |      |
+| +-------------+  | - Period Tagger   |  +------------------+      |
+|                  | - Service Class.  |                            |
+|                  +-------------------+                            |
++------------------------------------------------------------------+
+\end{verbatim}
+\caption{AlHaram Analytics System Architecture}
+\label{fig:architecture}
+\end{figure}
+
+\subsection{Directory Structure}
+
+\begin{lstlisting}[language=bash,caption={Project Directory Structure}]
+AlharamApplication/
+|-- src/alharam_analytics/          # Core library
+|   |-- __init__.py
+|   |-- pipeline.py                 # Main orchestrator
+|   |-- preprocessing/              # Text preprocessing
+|   |   |-- username_cleaner.py
+|   |   |-- language_detector.py
+|   |   |-- text_cleaner.py         # NEW: Arabic text normalization
+|   |-- feature_engineering/        # Feature extraction
+|   |   |-- app_name_normalizer.py
+|   |   |-- device_mapper.py
+|   |   |-- period_tagger.py
+|   |   |-- service_classifier.py
+|   |   |-- text_feature_extractor.py  # NEW: Text metrics
+|   |-- sentiment/                  # NEW: Sentiment analysis
+|   |   |-- sentiment_analyzer.py   # Deep learning + lexicon
+|   |-- analytics/                  # NEW: Evaluation metrics
+|   |   |-- dataset_analyzer.py     # Metrics and visualizations
+|   |-- gender_prediction/          # ML-based prediction
+|   |   |-- hf_gender_classifier.py
+|   |   |-- ensemble_predictor.py
+|   |-- utils/
+|       |-- io_utils.py
+|-- webapp/                         # Flask web application
+|   |-- app.py
+|   |-- templates/
+|   |-- static/
+|-- config/
+|   |-- pipeline_config.yaml
+|-- scripts/
+|   |-- run_preprocessing.py
+|-- docs/
+|-- notebooks/
+|-- data/
+    |-- raw/
+    |-- processed/
+\end{lstlisting}
+
+\subsection{Design Principles}
+
+\begin{enumerate}
+    \item \textbf{Modularity}: Each preprocessing step is an independent, reusable component
+    \item \textbf{Scikit-learn Compatibility}: Transformers implement fit/transform interface
+    \item \textbf{Configurability}: YAML-based configuration for all parameters
+    \item \textbf{Extensibility}: Easy to add new preprocessing steps or classifiers
+    \item \textbf{Multi-interface}: Web UI, CLI, and Python API for different use cases
+\end{enumerate}
+
+%===============================================================================
+\section{Technology Stack}
+\label{sec:technology}
+%===============================================================================
+
+\subsection{Core Technologies}
+
+\begin{table}[htbp]
+\centering
+\caption{Core Technology Stack}
+\label{tab:tech_stack}
+\begin{tabular}{llll}
+\hline
+\textbf{Component} & \textbf{Technology} & \textbf{Version} & \textbf{Purpose} \\
+\hline
+Language & Python & 3.10+ & Primary development language \\
+Data Processing & pandas & $\geq$2.0.0 & DataFrame operations \\
+Excel Support & openpyxl & $\geq$3.1.0 & Excel file I/O \\
+Language Detection & langid & $\geq$1.1.6 & Text language classification \\
+Islamic Calendar & hijri-converter & $\geq$2.3.0 & Gregorian-Hijri conversion \\
+Web Framework & Flask & $\geq$3.0.0 & REST API and web interface \\
+ML Models & transformers & $\geq$4.30.0 & HuggingFace model inference \\
+Deep Learning & PyTorch & $\geq$2.0.0 & Model backend \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Frontend Technologies}
+
+\begin{itemize}
+    \item \textbf{HTML5}: Semantic markup
+    \item \textbf{CSS3}: Responsive styling with CSS Grid and Flexbox
+    \item \textbf{JavaScript (ES6+)}: Async/await, fetch API
+    \item \textbf{Font Awesome 6.5.1}: Icon library
+    \item \textbf{Google Fonts}: Inter (Latin), Cairo (Arabic)
+\end{itemize}
+
+\subsection{Development Tools}
+
+\begin{table}[htbp]
+\centering
+\caption{Development Tools}
+\label{tab:dev_tools}
+\begin{tabular}{ll}
+\hline
+\textbf{Tool} & \textbf{Purpose} \\
+\hline
+pytest & Unit testing \\
+black & Code formatting (line length: 88) \\
+ruff & Linting (E, F, I, N, W rules) \\
+setuptools & Package building \\
+\hline
+\end{tabular}
+\end{table}
+
+%===============================================================================
+\section{Core Components}
+\label{sec:components}
+%===============================================================================
+
+\subsection{Username Cleaner}
+
+\textbf{Module:} \code{src/alharam\_analytics/preprocessing/username\_cleaner.py}
+
+Handles diverse username formats common in Arabic-speaking user bases.
+
+\subsubsection{Arabizi Conversion Map}
+
+\begin{table}[htbp]
+\centering
+\caption{Arabizi Character Mapping}
+\label{tab:arabizi}
+\begin{tabular}{llll}
+\hline
+\textbf{Character} & \textbf{Arabic Sound} & \textbf{Name} & \textbf{Example} \\
+\hline
+2 & ' (glottal stop) & Hamza/Alif & a2mad $\rightarrow$ ahmad \\
+3 & `ayn & Ain & 3ali $\rightarrow$ ali \\
+5 & kh & Kha & 5aled $\rightarrow$ khaled \\
+6 & emphatic t & Ta & 6ariq $\rightarrow$ tariq \\
+7 & h (pharyngeal) & Ha & a7mad $\rightarrow$ ahmad \\
+8 & gh & Ghain & 8areeb $\rightarrow$ ghareeb \\
+9 & emphatic s & Sad & 9aber $\rightarrow$ saber \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsubsection{Processing Steps}
+
+\begin{enumerate}
+    \item Convert Arabizi numerals to Latin equivalents
+    \item Remove trailing digits (e.g., ``Hassan855'' $\rightarrow$ ``Hassan'')
+    \item Strip punctuation, symbols, and emojis
+    \item Filter names with fewer than 3 letters $\rightarrow$ ``Anonymous''
+    \item Handle null/None values gracefully
+\end{enumerate}
+
+\subsubsection{Usage Example}
+
+\begin{lstlisting}[language=Python,caption={Username Cleaner Usage}]
+from alharam_analytics.preprocessing import UsernamePreprocessor
+
+cleaner = UsernamePreprocessor()
+df = cleaner.transform(df)  # Adds "clean_name" column
+\end{lstlisting}
+
+\subsection{Text Cleaner}
+
+\textbf{Module:} \code{src/alharam\_analytics/preprocessing/text\_cleaner.py}
+
+Comprehensive Arabic text cleaning that extracts information to separate columns rather than removing it.
+
+\subsubsection{Design Philosophy}
+
+Unlike traditional text cleaners that remove URLs, emojis, and special characters, the AlHaram Text Cleaner preserves all information by extracting elements to dedicated columns. This approach:
+
+\begin{itemize}
+    \item Preserves emojis for sentiment analysis
+    \item Keeps URLs for reference tracking
+    \item Maintains hashtags and mentions for social analysis
+    \item Flags presence of diacritics and elongation patterns
+\end{itemize}
+
+\subsubsection{Extraction Features}
+
+\begin{table}[htbp]
+\centering
+\caption{Text Cleaner Extraction Features}
+\label{tab:text_cleaner_features}
+\begin{tabular}{lll}
+\hline
+\textbf{Feature} & \textbf{Output Column} & \textbf{Description} \\
+\hline
+URLs & extracted\_urls & List of URLs found in text \\
+Emails & extracted\_emails & List of email addresses \\
+Emojis & extracted\_emojis & List of emojis with count \\
+Hashtags & extracted\_hashtags & Arabic and Latin hashtags \\
+Mentions & extracted\_mentions & @username mentions \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsubsection{Arabic Normalization}
+
+\begin{table}[htbp]
+\centering
+\caption{Arabic Character Normalization Mapping}
+\label{tab:arabic_normalization}
+\begin{tabular}{lll}
+\hline
+\textbf{Original} & \textbf{Normalized} & \textbf{Description} \\
+\hline
+Alef with Madda & Alef & Alef variants unified \\
+Alef with Hamza Above & Alef & Alef variants unified \\
+Alef with Hamza Below & Alef & Alef variants unified \\
+Alef Wasla & Alef & Alef variants unified \\
+Alef Maksura & Ya & Common normalization \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsubsection{Additional Processing}
+
+\begin{enumerate}
+    \item \textbf{Diacritics (Tashkeel)}: Stripped from clean text but flagged via \code{has\_diacritics} column
+    \item \textbf{Character Elongation}: Repeated characters (3+) collapsed to 2 (e.g., ``shukraaaan'' $\rightarrow$ ``shukraan''), flagged via \code{has\_elongation}
+    \item \textbf{Zero-width Characters}: Removed (U+200B-U+200D, FEFF, soft hyphen)
+    \item \textbf{Whitespace}: Normalized to single spaces
+\end{enumerate}
+
+\subsubsection{Usage Example}
+
+\begin{lstlisting}[language=Python,caption={Text Cleaner Usage}]
+from alharam_analytics.preprocessing import TextCleaner
+
+cleaner = TextCleaner(
+    text_column="Review Text",
+    normalize_arabic=True,
+    extract_emojis=True,
+    strip_diacritics=True
+)
+df = cleaner.transform(df)
+
+# Output columns added:
+# - clean_text: Normalized text
+# - extracted_urls, url_count, has_urls
+# - extracted_emojis, emoji_count, has_emojis
+# - extracted_hashtags, hashtag_count, has_hashtags
+# - has_diacritics, has_elongation
+\end{lstlisting}
+
+\subsection{Language Detector}
+
+\textbf{Module:} \code{src/alharam\_analytics/preprocessing/language\_detector.py}
+
+Multi-strategy language detection for Arabic/English content.
+
+\subsubsection{Detection Algorithm}
+
+\begin{enumerate}
+    \item Use langid library for primary classification
+    \item Check for Arabic Unicode range (U+0600-U+06FF)
+    \item Check for Latin characters (A-Za-z)
+    \item Classification:
+    \begin{itemize}
+        \item Primarily Arabic characters $\rightarrow$ ``Arabic''
+        \item Primarily Latin characters $\rightarrow$ ``English''
+        \item Both present significantly $\rightarrow$ ``Mixed''
+        \item Neither detected $\rightarrow$ ``Unknown''
+    \end{itemize}
+\end{enumerate}
+
+\subsubsection{Output Categories}
+
+\begin{table}[htbp]
+\centering
+\caption{Language Detection Output Categories}
+\label{tab:language_categories}
+\begin{tabular}{ll}
+\hline
+\textbf{Category} & \textbf{Description} \\
+\hline
+Arabic & Predominantly Arabic script \\
+English & Predominantly Latin script \\
+Mixed & Significant presence of both scripts \\
+Unknown & Unable to determine (emojis only, symbols, etc.) \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Period Tagger}
+
+\textbf{Module:} \code{src/alharam\_analytics/feature\_engineering/period\_tagger.py}
+
+Tags reviews based on Islamic calendar events and Saudi academic calendar.
+
+\subsubsection{Islamic Period Definitions}
+
+\begin{table}[htbp]
+\centering
+\caption{Islamic Calendar Period Definitions}
+\label{tab:islamic_periods}
+\begin{tabular}{lll}
+\hline
+\textbf{Period} & \textbf{Hijri Date} & \textbf{Description} \\
+\hline
+Hajj Season & 1-15 Dhul Hijjah & Peak pilgrimage period \\
+Eid al-Adha & 10-13 Dhul Hijjah & Festival of Sacrifice \\
+Eid al-Fitr & 1-3 Shawwal & End of Ramadan \\
+Ramadan & Full month 9 & Fasting month \\
+School Summer & Ministry dates & Saudi academic break \\
+Regular & Other dates & Normal period \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsubsection{Implementation}
+
+\begin{lstlisting}[language=Python,caption={Period Tagging Implementation}]
+from hijri_converter import Hijri, Gregorian
+
+def tag_period(gregorian_date):
+    hijri = Gregorian(date.year, date.month, date.day).to_hijri()
+
+    if hijri.month == 12 and 1 <= hijri.day <= 15:
+        if 10 <= hijri.day <= 13:
+            return "Eid al-Adha"
+        return "Hajj Season"
+    elif hijri.month == 10 and 1 <= hijri.day <= 3:
+        return "Eid al-Fitr"
+    elif hijri.month == 9:
+        return "Ramadan"
+    # ... check school summer dates
+    return "Regular"
+\end{lstlisting}
+
+\subsection{Service Classifier}
+
+\textbf{Module:} \code{src/alharam\_analytics/feature\_engineering/service\_classifier.py}
+
+Categorizes applications into service types based on predefined mappings.
+
+\begin{lstlisting}[language=Python,caption={Service Classification Mapping}]
+SERVICE_MAPPING = {
+    "Health Services": [
+        "sehhaty", "asaafni"
+    ],
+    "Reservation/Transport": [
+        "makkah buses", "hhr train", "tanqul", "trwayyah"
+    ],
+    "Government Services": [
+        "tawakkalna", "nusuk", "irshad"
+    ],
+    "Religious": [
+        "qibla finder", "haramain quran"
+    ],
+    "Others": []  # Default category
+}
+\end{lstlisting}
+
+\subsection{Text Feature Extractor}
+
+\textbf{Module:} \code{src/alharam\_analytics/feature\_engineering/text\_feature\_extractor.py}
+
+Extracts quantitative text features for analysis and machine learning models.
+
+\subsubsection{Feature Categories}
+
+\begin{table}[htbp]
+\centering
+\caption{Text Feature Extractor Output}
+\label{tab:text_features}
+\begin{tabular}{lll}
+\hline
+\textbf{Feature} & \textbf{Column} & \textbf{Description} \\
+\hline
+\multicolumn{3}{l}{\textit{Length Metrics}} \\
+Character count & text\_char\_count & Total characters \\
+Word count & text\_word\_count & Total words \\
+Sentence count & text\_sentence\_count & Approximate sentences \\
+Avg word length & text\_avg\_word\_length & Mean word length \\
+\hline
+\multicolumn{3}{l}{\textit{Script Analysis}} \\
+Arabic chars & text\_arabic\_char\_count & Arabic character count \\
+Latin chars & text\_latin\_char\_count & Latin character count \\
+Arabic ratio & text\_arabic\_ratio & Arabic / total alphabetic \\
+Digit count & text\_digit\_count & Number of digits \\
+Digit ratio & text\_digit\_ratio & Digits / total chars \\
+\hline
+\multicolumn{3}{l}{\textit{Lexical Features}} \\
+Unique words & text\_unique\_word\_count & Vocabulary size \\
+Lexical diversity & text\_lexical\_diversity & Unique / total words (TTR) \\
+\hline
+\multicolumn{3}{l}{\textit{Punctuation}} \\
+Punctuation count & text\_punctuation\_count & Total punctuation marks \\
+Exclamation count & text\_exclamation\_count & Count of ! \\
+Question count & text\_question\_count & Count of ? and Arabic ? \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsubsection{Usage Example}
+
+\begin{lstlisting}[language=Python,caption={Text Feature Extractor Usage}]
+from alharam_analytics.feature_engineering import TextFeatureExtractor
+
+extractor = TextFeatureExtractor(
+    text_column="Review Text",
+    prefix="text_",
+    include_ratios=True,
+    include_lexical=True
+)
+df = extractor.transform(df)
+
+# Use features for analysis
+avg_arabic = df['text_arabic_ratio'].mean()
+print(f"Average Arabic content: {avg_arabic:.1%}")
+\end{lstlisting}
+
+\subsection{Sentiment Analyzer}
+
+\textbf{Module:} \code{src/alharam\_analytics/sentiment/sentiment\_analyzer.py}
+
+Deep learning-based sentiment analysis for Arabic app reviews using pre-trained transformer models.
+
+\subsubsection{Model Options}
+
+\begin{table}[htbp]
+\centering
+\caption{Available Sentiment Models}
+\label{tab:sentiment_models}
+\begin{tabular}{lll}
+\hline
+\textbf{Model} & \textbf{HuggingFace Path} & \textbf{Best For} \\
+\hline
+CAMeL-BERT & CAMeL-Lab/bert-base-arabic-camelbert-mix-sentiment & MSA + Dialectal \\
+AraBERT & aubmindlab/bert-base-arabertv2 & Modern Standard Arabic \\
+Multilingual & nlptown/bert-base-multilingual-uncased-sentiment & Mixed content \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsubsection{Output Schema}
+
+\begin{table}[htbp]
+\centering
+\caption{Sentiment Analysis Output Columns}
+\label{tab:sentiment_output}
+\begin{tabular}{lll}
+\hline
+\textbf{Column} & \textbf{Type} & \textbf{Description} \\
+\hline
+sentiment & string & Label: positive, neutral, negative \\
+sentiment\_score & float & Score from -1 (negative) to +1 (positive) \\
+sentiment\_confidence & float & Model confidence from 0 to 1 \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsubsection{Architecture}
+
+The sentiment analyzer uses a two-tier approach:
+
+\begin{enumerate}
+    \item \textbf{Deep Learning (Primary)}: CAMeL-BERT transformer model fine-tuned for Arabic sentiment classification. Processes text in batches with GPU acceleration when available.
+
+    \item \textbf{Lexicon-Based (Fallback)}: Rule-based analyzer using Arabic and English sentiment lexicons plus emoji sentiment mapping. Used when transformers library is unavailable or GPU memory is insufficient.
+\end{enumerate}
+
+\subsubsection{Lexicon-Based Fallback}
+
+The \code{SimpleSentimentAnalyzer} uses curated word lists:
+
+\begin{itemize}
+    \item \textbf{Positive words}: Arabic (mumtaz, rai', jamil, shukran) and English (excellent, great, love)
+    \item \textbf{Negative words}: Arabic (sayyi', fashil, mushkila) and English (bad, terrible, hate)
+    \item \textbf{Emoji sentiment}: Positive (thumbs up, heart, smile) and Negative (thumbs down, angry, crying)
+\end{itemize}
+
+\subsubsection{Usage Example}
+
+\begin{lstlisting}[language=Python,caption={Sentiment Analyzer Usage}]
+from alharam_analytics.sentiment import SentimentAnalyzer
+
+# Deep learning approach
+analyzer = SentimentAnalyzer(
+    model_name='camel-bert',
+    batch_size=16,
+    device='cuda'  # or 'cpu'
+)
+df = analyzer.transform(df)
+
+# Check sentiment distribution
+print(df['sentiment'].value_counts(normalize=True))
+# positive    0.45
+# neutral     0.35
+# negative    0.20
+
+# Filter negative reviews for analysis
+negative_reviews = df[df['sentiment'] == 'negative']
+\end{lstlisting}
+
+\subsubsection{Performance Considerations}
+
+\begin{table}[htbp]
+\centering
+\caption{Sentiment Analysis Performance}
+\label{tab:sentiment_performance}
+\begin{tabular}{lll}
+\hline
+\textbf{Method} & \textbf{Speed (1000 rows)} & \textbf{Accuracy} \\
+\hline
+CAMeL-BERT (GPU) & $\sim$30 seconds & High (fine-tuned) \\
+CAMeL-BERT (CPU) & $\sim$5 minutes & High (fine-tuned) \\
+Lexicon-based & $\sim$2 seconds & Moderate \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Gender Prediction (Optional)}
+
+\textbf{Module:} \code{src/alharam\_analytics/gender\_prediction/}
+
+Ensemble-based gender prediction using HuggingFace transformers.
+
+\subsubsection{Models Used}
+
+\begin{enumerate}
+    \item \textbf{imranali291/genderize}: General name-based classifier
+    \item \textbf{padmajabfrl/Gender-Classification}: Alternative classifier
+\end{enumerate}
+
+\subsubsection{Ensemble Decision Logic}
+
+\begin{lstlisting}[language=Python,caption={Gender Prediction Ensemble Logic}]
+def predict_ensemble(name):
+    pred1, conf1 = model1.predict(name)
+    pred2, conf2 = model2.predict(name)
+
+    if pred1 == pred2:
+        return pred1  # Agreement
+    elif conf1 >= 0.80:
+        return pred1  # High confidence model 1
+    elif conf2 >= 0.80:
+        return pred2  # High confidence model 2
+    else:
+        return "unknown"  # Disagreement, low confidence
+\end{lstlisting}
+
+\subsubsection{Output Columns}
+
+\begin{table}[htbp]
+\centering
+\caption{Gender Prediction Output Columns}
+\label{tab:gender_output}
+\begin{tabular}{ll}
+\hline
+\textbf{Column} & \textbf{Description} \\
+\hline
+pred\_gender\_1 & Model 1 prediction \\
+pred\_score\_1 & Model 1 confidence (0-1) \\
+pred\_gender\_2 & Model 2 prediction \\
+pred\_score\_2 & Model 2 confidence (0-1) \\
+gender\_final & Ensemble decision \\
+\hline
+\end{tabular}
+\end{table}
+
+%===============================================================================
+\section{Data Processing Pipeline}
+\label{sec:pipeline}
+%===============================================================================
+
+\subsection{Pipeline Overview}
+
+The \code{PreprocessingPipeline} class orchestrates all preprocessing steps in a configurable sequence.
+
+\begin{lstlisting}[language=Python,caption={Pipeline Usage Example}]
+from alharam_analytics.pipeline import PreprocessingPipeline
+
+# Initialize
+pipeline = PreprocessingPipeline(
+    include_gender_prediction=False,
+    verbose=True
+)
+
+# Run full pipeline
+df = pipeline.run("data/raw/reviews.xlsx")
+
+# Run specific steps
+df = pipeline.run(
+    "data/raw/reviews.xlsx",
+    steps=["username", "language", "period"]
+)
+
+# Save results
+pipeline.save(df, "data/processed/reviews_cleaned.xlsx")
+\end{lstlisting}
+
+\subsection{Pipeline Steps}
+
+\begin{table}[htbp]
+\centering
+\caption{Pipeline Processing Steps}
+\label{tab:pipeline_steps}
+\begin{tabular}{cllll}
+\hline
+\textbf{Step} & \textbf{Component} & \textbf{Input Column} & \textbf{Output Column} \\
+\hline
+1 & TextCleaner & Review Text & clean\_text, extracted\_* \\
+2 & UsernamePreprocessor & User Name & clean\_name \\
+3 & LanguageDetector & Review Text & language \\
+4 & DeviceTypeMapper & Platform & Device Type \\
+5 & AppNameNormalizer & Application Name & Application Name (norm.) \\
+6 & ServiceClassifier & Application Name & Service\_Type \\
+7 & TextFeatureExtractor & Review Text & text\_* (14 features) \\
+8 & PeriodTagger & Review Date & period, App\_Version\_Period \\
+9 & SentimentAnalyzer & Review Text & sentiment, sentiment\_score \\
+10* & GenderEnsemblePredictor & clean\_name & gender\_final, pred\_* \\
+\hline
+\multicolumn{5}{l}{\small *Optional step}
+\end{tabular}
+\end{table}
+
+\subsection{Pipeline Execution Flow}
+
+\begin{figure}[htbp]
+\centering
+\begin{verbatim}
+Input Data (Excel/CSV)
+         |
+         v
++------------------------+
+| 1. Text Cleaning       |
+|    - Arabic normaliz.  |
+|    - Extract URLs/emoji|
++----------+-------------+
+           |
+           v
++------------------------+
+| 2. Username Cleaning   |
+|    - Arabizi conv.     |
+|    - Symbol removal    |
++----------+-------------+
+           |
+           v
++------------------------+
+| 3. Language Detection  |
+|    - langid            |
+|    - Script analysis   |
++----------+-------------+
+           |
+           v
++------------------------+
+| 4. Device Mapping      |
+|    - Platform -> Type  |
++----------+-------------+
+           |
+           v
++------------------------+
+| 5. App Normalization   |
+|    - Spelling fixes    |
+|    - Name unification  |
++----------+-------------+
+           |
+           v
++------------------------+
+| 6. Service Classify    |
+|    - Category assign   |
++----------+-------------+
+           |
+           v
++------------------------+
+| 7. Text Features       |
+|    - Word count, ratio |
+|    - Lexical diversity |
++----------+-------------+
+           |
+           v
++------------------------+
+| 8. Period Tagging      |
+|    - Hijri convert     |
+|    - Event matching    |
++----------+-------------+
+           |
+           v
++------------------------+
+| 9. Sentiment Analysis  |
+|    - CAMeL-BERT / Lex. |
+|    - Score + Label     |
++----------+-------------+
+           |
+           v (optional)
++------------------------+
+| 10. Gender Prediction  |
+|    - HF models         |
+|    - Ensemble vote     |
++----------+-------------+
+           |
+           v
+    Output Data
+\end{verbatim}
+\caption{Pipeline Execution Flow}
+\label{fig:pipeline_flow}
+\end{figure}
+
+%===============================================================================
+\section{Web Application}
+\label{sec:webapp}
+%===============================================================================
+
+\subsection{Overview}
+
+The Flask-based web application provides an interactive interface for data preprocessing with real-time preview and step-by-step execution.
+
+\begin{itemize}
+    \item \textbf{Entry Point:} \code{run\_webapp.py}
+    \item \textbf{Default URL:} \url{http://localhost:5000}
+\end{itemize}
+
+\subsection{User Interface Components}
+
+\subsubsection{File Upload Section}
+\begin{itemize}
+    \item Drag-and-drop or click to browse
+    \item Supports .xlsx, .xls, .csv formats
+    \item Maximum file size: 50MB
+    \item Upload progress indication
+\end{itemize}
+
+\subsubsection{Pipeline Visualization}
+Six processing cards with:
+\begin{itemize}
+    \item Step icon and name
+    \item Brief description
+    \item Preview button (shows before/after)
+    \item Apply button (executes step)
+    \item Status indicator (pending/applied)
+\end{itemize}
+
+\subsubsection{Action Buttons}
+\begin{itemize}
+    \item \textbf{Apply All}: Execute full pipeline
+    \item \textbf{Reset}: Revert to original data
+    \item \textbf{Download}: Export processed file
+    \item \textbf{Change File}: Upload different file
+\end{itemize}
+
+\subsection{Session Management}
+
+\begin{lstlisting}[language=Python,caption={Session Storage Structure}]
+# In-memory session storage
+sessions = {
+    "20260103143052": {
+        "original_df": DataFrame,    # Original uploaded data
+        "current_df": DataFrame,     # Current state
+        "applied_steps": ["username", "language"],
+        "filename": "reviews.xlsx"
+    }
+}
+\end{lstlisting}
+
+\textbf{Note:} Production deployments should use Redis or database-backed sessions.
+
+%===============================================================================
+\section{API Reference}
+\label{sec:api}
+%===============================================================================
+
+\subsection{REST Endpoints}
+
+\begin{table}[htbp]
+\centering
+\caption{REST API Endpoints}
+\label{tab:api_endpoints}
+\begin{tabular}{lll}
+\hline
+\textbf{Endpoint} & \textbf{Method} & \textbf{Description} \\
+\hline
+\code{/} & GET & Main web interface \\
+\code{/upload} & POST & Upload data file \\
+\code{/preview/<session\_id>/<step\_id>} & GET & Preview transformation \\
+\code{/apply/<session\_id>/<step\_id>} & POST & Apply single step \\
+\code{/apply-all/<session\_id>} & POST & Apply all steps \\
+\code{/reset/<session\_id>} & POST & Reset to original \\
+\code{/download/<session\_id>} & GET & Download processed file \\
+\code{/stats/<session\_id>} & GET & Get dataset statistics \\
+\code{/analytics/<session\_id>} & GET & Get evaluation metrics \\
+\code{/analytics/charts/<session\_id>} & GET & Generate visualizations \\
+\code{/analytics/report/<session\_id>} & GET & Get text summary report \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Response Formats}
+
+\subsubsection{Upload Response}
+
+\begin{lstlisting}[language=Python,caption={Upload Response Format}]
+{
+  "success": true,
+  "session_id": "20260103143052",
+  "filename": "reviews.xlsx",
+  "rows": 15420,
+  "columns": ["Review ID", "Review Date", "Review Text", ...],
+  "sample": [...]
+}
+\end{lstlisting}
+
+\subsubsection{Preview Response}
+
+\begin{lstlisting}[language=Python,caption={Preview Response Format}]
+{
+  "success": true,
+  "step": "username",
+  "input_column": "User Name",
+  "output_column": "clean_name",
+  "sample_before": ["Mo7amed123", "fatima_2020", ...],
+  "sample_after": ["Mohamed", "fatima", ...],
+  "stats": {
+    "unique_before": 8542,
+    "unique_after": 7831,
+    "anonymous_count": 245
+  }
+}
+\end{lstlisting}
+
+\subsection{CLI Interface}
+
+\begin{lstlisting}[language=bash,caption={Command-Line Interface Usage}]
+# Basic usage
+python scripts/run_preprocessing.py \
+    -i data/raw/reviews.xlsx \
+    -o data/processed/reviews_cleaned.xlsx
+
+# With gender prediction
+python scripts/run_preprocessing.py \
+    -i data/raw/reviews.xlsx \
+    -o data/processed/reviews_cleaned.xlsx \
+    --gender
+
+# Quiet mode (no progress output)
+python scripts/run_preprocessing.py \
+    -i data/raw/reviews.xlsx \
+    -o data/processed/reviews_cleaned.xlsx \
+    -q
+
+# Specific steps only
+python scripts/run_preprocessing.py \
+    -i data/raw/reviews.xlsx \
+    -o data/processed/reviews_cleaned.xlsx \
+    --steps username language period
+\end{lstlisting}
+
+%===============================================================================
+\section{Data Schema}
+\label{sec:schema}
+%===============================================================================
+
+\subsection{Input Requirements}
+
+\begin{table}[htbp]
+\centering
+\caption{Input Data Requirements}
+\label{tab:input_schema}
+\begin{tabular}{llll}
+\hline
+\textbf{Column} & \textbf{Type} & \textbf{Required} & \textbf{Description} \\
+\hline
+Review ID & integer & Yes & Unique identifier \\
+Review Date & datetime & Yes & Review submission date \\
+Review Text & string & Yes & Review content \\
+Rating & integer & No & 1-5 star rating \\
+User Name & string & Yes & Reviewer username \\
+Platform & string & Yes & App store (App Store/Google Play) \\
+Application Name & string & Yes & Application name \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Output Schema}
+
+After full pipeline execution:
+
+\begin{table}[htbp]
+\centering
+\caption{Output Data Schema}
+\label{tab:output_schema}
+\begin{tabular}{llll}
+\hline
+\textbf{Column} & \textbf{Type} & \textbf{Source} & \textbf{Description} \\
+\hline
+Review ID & int & Original & Unique identifier \\
+Review Date & datetime & Original & Submission date \\
+Review Text & string & Original & Review content \\
+Rating & int & Original & Star rating \\
+User Name & string & Original & Original username \\
+\textbf{clean\_text} & string & Step 1 & Normalized clean text \\
+\textbf{extracted\_emojis} & list & Step 1 & Emojis found in text \\
+\textbf{has\_urls} & bool & Step 1 & Contains URLs \\
+\textbf{clean\_name} & string & Step 2 & Cleaned username \\
+Platform & string & Original & App store \\
+\textbf{Device Type} & string & Step 4 & iOS/Android/Other \\
+Application Name & string & Step 5 & Normalized app name \\
+\textbf{Service\_Type} & string & Step 6 & Service category \\
+\textbf{language} & string & Step 3 & Arabic/English/Mixed/Unknown \\
+\textbf{text\_word\_count} & int & Step 7 & Word count \\
+\textbf{text\_arabic\_ratio} & float & Step 7 & Arabic character ratio \\
+\textbf{period} & string & Step 8 & Islamic calendar period \\
+\textbf{App\_Version\_Period} & string & Step 8 & Quarter (2023Q1, etc.) \\
+\textbf{sentiment} & string & Step 9 & positive/neutral/negative \\
+\textbf{sentiment\_score} & float & Step 9 & Score (-1 to +1) \\
+\textbf{gender\_final}* & string & Step 10 & Male/Female/unknown \\
+\hline
+\multicolumn{4}{l}{\small *Only if gender prediction enabled}
+\end{tabular}
+\end{table}
+
+%===============================================================================
+\section{Installation and Deployment}
+\label{sec:installation}
+%===============================================================================
+
+\subsection{Requirements}
+
+\begin{itemize}
+    \item Python 3.10 or higher
+    \item pip package manager
+    \item 4GB+ RAM (8GB+ recommended for gender prediction)
+\end{itemize}
+
+\subsection{Installation Steps}
+
+\begin{lstlisting}[language=bash,caption={Installation Commands}]
+# Clone repository
+git clone https://github.com/username/AlharamApplication.git
+cd AlharamApplication
+
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # Linux/Mac
+# venv\Scripts\activate   # Windows
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Optional: Install gender prediction dependencies
+pip install transformers torch
+
+# Install package in development mode
+pip install -e .
+\end{lstlisting}
+
+\subsection{Running the Application}
+
+\subsubsection{Web Interface}
+\begin{lstlisting}[language=bash]
+python run_webapp.py
+# Opens browser at http://localhost:5000
+\end{lstlisting}
+
+\subsubsection{Command Line}
+\begin{lstlisting}[language=bash]
+python scripts/run_preprocessing.py -i input.xlsx -o output.xlsx
+\end{lstlisting}
+
+\subsubsection{Python API}
+\begin{lstlisting}[language=Python]
+from alharam_analytics.pipeline import PreprocessingPipeline
+
+pipeline = PreprocessingPipeline()
+df = pipeline.run("input.xlsx")
+pipeline.save(df, "output.xlsx")
+\end{lstlisting}
+
+\subsection{Configuration}
+
+Edit \code{config/pipeline\_config.yaml}:
+
+\begin{lstlisting}[language=Python,caption={Configuration File Example}]
+data:
+  raw_dir: "data/raw"
+  processed_dir: "data/processed"
+
+preprocessing:
+  username:
+    min_letters: 3
+    column_name: "User Name"
+    output_column: "clean_name"
+
+gender_prediction:
+  enabled: false
+  confidence_threshold: 0.60
+  high_confidence_threshold: 0.80
+
+logging:
+  verbose: true
+\end{lstlisting}
+
+%===============================================================================
+\section{Evaluation Metrics and Analytics}
+\label{sec:evaluation}
+%===============================================================================
+
+The AlHaram Analytics system includes comprehensive evaluation metrics and visualization capabilities to assess data quality and preprocessing effectiveness.
+
+\subsection{Data Quality Metrics}
+
+\begin{table}[htbp]
+\centering
+\caption{Data Quality Evaluation Metrics}
+\label{tab:quality_metrics}
+\begin{tabular}{lll}
+\hline
+\textbf{Metric} & \textbf{Formula} & \textbf{Description} \\
+\hline
+Completeness Rate & $\frac{\text{non-null cells}}{\text{total cells}} \times 100$ & Data completeness \\
+Duplicate Rate & $\frac{\text{duplicate rows}}{\text{total rows}} \times 100$ & Redundancy measure \\
+Missing Rate & $\frac{\text{null values}}{\text{column size}} \times 100$ & Per-column quality \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Text Statistics Metrics}
+
+\begin{table}[htbp]
+\centering
+\caption{Text Analysis Metrics}
+\label{tab:text_metrics}
+\begin{tabular}{ll}
+\hline
+\textbf{Metric} & \textbf{Description} \\
+\hline
+Average Word Count & Mean words per review \\
+Arabic Ratio & Proportion of Arabic characters \\
+Lexical Diversity (TTR) & Unique words / Total words \\
+Emoji Rate & Percentage of reviews containing emojis \\
+URL Rate & Percentage of reviews containing URLs \\
+Diacritics Rate & Reviews with Arabic diacritics \\
+Elongation Rate & Reviews with character elongation \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Preprocessing Impact Metrics}
+
+\begin{table}[htbp]
+\centering
+\caption{Preprocessing Effectiveness Metrics}
+\label{tab:preprocessing_metrics}
+\begin{tabular}{ll}
+\hline
+\textbf{Metric} & \textbf{Description} \\
+\hline
+Username Consolidation & Reduction in unique usernames after cleaning \\
+Anonymous Rate & Percentage of usernames marked as Anonymous \\
+Text Reduction Rate & Character reduction after normalization \\
+Sentiment Coverage & Percentage with valid sentiment predictions \\
+High Confidence Rate & Predictions with confidence $>$ 0.8 \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Visualizations}
+
+The system generates the following visualizations:
+
+\begin{enumerate}
+    \item \textbf{Language Distribution}: Pie chart showing Arabic/English/Mixed/Unknown breakdown
+    \item \textbf{Sentiment Distribution}: Bar chart of positive/neutral/negative counts
+    \item \textbf{Period Distribution}: Horizontal bar chart of Islamic calendar periods
+    \item \textbf{Service Type Distribution}: Pie chart of service categories
+    \item \textbf{Word Count Histogram}: Distribution of review lengths
+    \item \textbf{Arabic Ratio Histogram}: Distribution of Arabic content ratios
+    \item \textbf{Device Distribution}: iOS vs Android breakdown
+    \item \textbf{Sentiment by Period}: Stacked bar showing sentiment trends across periods
+\end{enumerate}
+
+\subsection{Analytics API}
+
+\begin{lstlisting}[language=Python,caption={Analytics Module Usage}]
+from alharam_analytics.analytics import DatasetAnalyzer, DatasetVisualizer
+
+# Compute metrics
+analyzer = DatasetAnalyzer(df)
+metrics = analyzer.compute_all_metrics()
+
+print(f"Completeness: {metrics['data_quality']['completeness_rate']}%")
+print(f"Sentiment Distribution: {metrics['sentiment_distribution']}")
+
+# Generate visualizations
+visualizer = DatasetVisualizer(df, output_dir='charts/')
+charts = visualizer.generate_all_charts()
+
+# Generate text report
+report = analyzer.generate_summary_report()
+print(report)
+\end{lstlisting}
+
+%===============================================================================
+\section{Performance Considerations}
+\label{sec:performance}
+%===============================================================================
+
+\subsection{Processing Times}
+
+\begin{table}[htbp]
+\centering
+\caption{Processing Time Estimates}
+\label{tab:performance}
+\begin{tabular}{lll}
+\hline
+\textbf{Step} & \textbf{Time per 1000 rows} & \textbf{Notes} \\
+\hline
+Text Cleaning & $\sim$1-2 seconds & Regex extraction \\
+Username Cleaning & $\sim$0.5 seconds & String operations \\
+Language Detection & $\sim$2-3 seconds & langid inference \\
+Device Mapping & $\sim$0.1 seconds & Dictionary lookup \\
+App Normalization & $\sim$0.2 seconds & String matching \\
+Service Classification & $\sim$0.2 seconds & Dictionary lookup \\
+Text Feature Extraction & $\sim$1 second & Character analysis \\
+Period Tagging & $\sim$1-2 seconds & Hijri conversion \\
+Sentiment (GPU) & $\sim$30 seconds & CAMeL-BERT inference \\
+Sentiment (CPU) & $\sim$5 minutes & CAMeL-BERT inference \\
+Sentiment (Lexicon) & $\sim$2 seconds & Word matching \\
+Gender Prediction & $\sim$30-60 seconds & Transformer inference \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Memory Usage}
+
+\begin{table}[htbp]
+\centering
+\caption{Memory Usage Estimates}
+\label{tab:memory}
+\begin{tabular}{lll}
+\hline
+\textbf{Dataset Size} & \textbf{Without Gender} & \textbf{With Gender} \\
+\hline
+10,000 rows & $\sim$200 MB & $\sim$2 GB \\
+50,000 rows & $\sim$500 MB & $\sim$3 GB \\
+100,000 rows & $\sim$1 GB & $\sim$4 GB \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Optimization Recommendations}
+
+\begin{enumerate}
+    \item \textbf{Batch Processing}: Process large files in chunks
+    \item \textbf{Disable Gender Prediction}: Skip if not needed (saves 80\% time)
+    \item \textbf{Selective Steps}: Run only required preprocessing steps
+    \item \textbf{Caching}: Cache HuggingFace models locally
+\end{enumerate}
+
+%===============================================================================
+\section{Future Enhancements}
+\label{sec:future}
+%===============================================================================
+
+\subsection{Implemented Features (v0.2.0)}
+
+\begin{enumerate}
+    \item \textbf{Text Cleaning}: Extraction-based Arabic text normalization preserving all information
+    \item \textbf{Text Feature Extraction}: Quantitative metrics including Arabic ratio, lexical diversity
+    \item \textbf{Sentiment Analysis}: Deep learning (CAMeL-BERT) with lexicon fallback
+\end{enumerate}
+
+\subsection{Planned Features}
+
+\begin{enumerate}
+    \item \textbf{Topic Modeling}: Automatic topic extraction from reviews using LDA or BERTopic
+    \item \textbf{Database Backend}: PostgreSQL for persistent storage
+    \item \textbf{User Authentication}: Multi-user support with sessions
+    \item \textbf{Batch Processing API}: Async processing for large datasets
+    \item \textbf{Export Formats}: Add PDF report generation
+    \item \textbf{Aspect-Based Sentiment}: Fine-grained sentiment on specific aspects (UI, performance, etc.)
+\end{enumerate}
+
+\subsection{Technical Improvements}
+
+\begin{enumerate}
+    \item \textbf{Redis Sessions}: Replace in-memory session storage
+    \item \textbf{Celery Workers}: Background task processing
+    \item \textbf{Docker Deployment}: Containerized deployment
+    \item \textbf{API Rate Limiting}: Production-ready API protection
+    \item \textbf{Logging}: Structured logging with ELK stack integration
+\end{enumerate}
+
+%===============================================================================
+% APPENDICES
+%===============================================================================
+\appendix
+
+\section{Arabizi Character Mapping}
+\label{app:arabizi}
+
+\begin{table}[htbp]
+\centering
+\caption{Complete Arabizi Character Mapping}
+\label{tab:arabizi_full}
+\begin{tabular}{llll}
+\hline
+\textbf{Number} & \textbf{Arabic Sound} & \textbf{Name} & \textbf{Example} \\
+\hline
+2 & ' (glottal stop) & Hamza/Alif & sa2al $\rightarrow$ sa'al \\
+3 & `ayn & Ain & 3arab $\rightarrow$ arab \\
+5 & kh & Kha & 5air $\rightarrow$ khair \\
+6 & emphatic t & Ta & 6areq $\rightarrow$ tareq \\
+7 & h (pharyngeal) & Ha & 7ubb $\rightarrow$ hubb \\
+8 & gh & Ghain & 8areeb $\rightarrow$ ghareeb \\
+9 & emphatic s & Sad & 9abr $\rightarrow$ sabr \\
+\hline
+\end{tabular}
+\end{table}
+
+\section{Islamic Calendar Reference}
+\label{app:hijri}
+
+\begin{table}[htbp]
+\centering
+\caption{Hijri Calendar Months and Notable Events}
+\label{tab:hijri_months}
+\begin{tabular}{cll}
+\hline
+\textbf{Month \#} & \textbf{Name} & \textbf{Notable Events} \\
+\hline
+1 & Muharram & Islamic New Year \\
+2 & Safar & --- \\
+3 & Rabi' al-Awwal & Mawlid (Prophet's Birthday) \\
+4 & Rabi' al-Thani & --- \\
+5 & Jumada al-Awwal & --- \\
+6 & Jumada al-Thani & --- \\
+7 & Rajab & Isra and Mi'raj \\
+8 & Sha'ban & --- \\
+9 & Ramadan & Fasting Month \\
+10 & Shawwal & Eid al-Fitr \\
+11 & Dhul Qa'dah & --- \\
+12 & Dhul Hijjah & Hajj, Eid al-Adha \\
+\hline
+\end{tabular}
+\end{table}
+
+%===============================================================================
+% REFERENCES
+%===============================================================================
+\section*{References}
+
+\begin{enumerate}
+    \item Flask Documentation: \url{https://flask.palletsprojects.com/}
+    \item HuggingFace Transformers: \url{https://huggingface.co/docs/transformers/}
+    \item Hijri Converter: \url{https://hijri-converter.readthedocs.io/}
+    \item langid.py: \url{https://github.com/saffsd/langid.py}
+    \item pandas Documentation: \url{https://pandas.pydata.org/docs/}
+\end{enumerate}
+
+\vfill
+\begin{center}
+\rule{0.5\textwidth}{0.4pt}\\[0.5cm]
+\textit{Document generated: January 2026}\\
+\textit{AlHaram Analytics v0.2.0}
+\end{center}
+
+\end{document}
